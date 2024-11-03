@@ -1,7 +1,7 @@
-model_family: llama2-7b
+model_family: phi #llama2-7b
 
 LoRA:
-  r: 0
+  r: 1
   alpha: 32
   dropout: 0.05
 
@@ -11,7 +11,8 @@ batch_size: 16
 gradient_accumulation_steps: 1
 num_epochs: 5
 lr: 1e-5
-save_dir: /data/locus/llm_weights/zhilif/TOFU/ft_epoch${num_epochs}_lr${lr}_${model_family}_${split}_wd${weight_decay}
+save_dir: ./data/locus/llm_weights/zhilif/TOFU/ft_epoch${num_epochs}_lr${lr}_${model_family}_${split}_wd${weight_decay}_lora1
+#save_dir: ./data/locus/llm_weights/zhilif/TOFU/ft_epoch${num_epochs}_lr${lr}_${model_family}_${split}_wd${weight_decay}
 
 weight_decay: 0.01
 seed: 42

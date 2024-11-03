@@ -65,17 +65,17 @@ def main(cfg):
     # --nproc_per_node gives the number of GPUs per = num_devices. take it from torchrun/os.environ
     num_devices = int(os.environ.get('WORLD_SIZE', 1))
     print(f"num_devices: {num_devices}")
-
     
-    max_steps = int(cfg.num_epochs*len(torch_format_dataset))//(batch_size*gradient_accumulation_steps*num_devices)
-    # max_steps=5
-    print(f"max_steps: {max_steps}")
-    training_args = transformers.TrainingArguments(
+    if cfg.num_epochs > 0:
+        max_steps = int(cfg.num_epochs*len(torch_format_dataset))//(batch_size*gradient_accumulation_steps*num_devices)
+        # max_steps=5
+        print(f"max_steps: {max_steps}")
+        training_args = transformers.TrainingArguments(
             per_device_train_batch_size=batch_size,
             per_device_eval_batch_size=batch_size,
             gradient_accumulation_steps=gradient_accumulation_steps,
             # warmup_steps=max(1, max_steps//10),
-            warmup_steps=max(1, max_steps//cfg.num_epochs),
+            warmup_steps=max(1, max_steps//cfg.num_epochs) if cfg.num_epochs > 0 else 0,
             max_steps=max_steps,
             learning_rate=cfg.lr,
             bf16=True,
@@ -94,41 +94,50 @@ def main(cfg):
         )
 
     model = AutoModelForCausalLM.from_pretrained(model_id, use_flash_attention_2=model_cfg["flash_attention2"]=="true", torch_dtype=torch.bfloat16, trust_remote_code = True)
+    print("loaded model")
     
     # Hot fix for https://discuss.huggingface.co/t/help-with-llama-2-finetuning-setup/50035
-    model.generation_config.do_sample = True
+    if cfg.num_epochs > 0:
+        model.generation_config.do_sample = True
 
-    if model_cfg["gradient_checkpointing"] == "true":
-        model.gradient_checkpointing_enable()
+        if model_cfg["gradient_checkpointing"] == "true":
+            model.gradient_checkpointing_enable()
+        print(f'LORA: {cfg.LoRA.r}')
+        if cfg.LoRA.r != 0:
+            config = LoraConfig(
+                r=cfg.LoRA.r, 
+                lora_alpha=cfg.LoRA.alpha, 
+                target_modules=find_all_linear_names(model), 
+                lora_dropout=cfg.LoRA.dropout,
+                bias="none", 
+                task_type="CAUSAL_LM"
+            )
+            model = get_peft_model(model, config)
+            model.enable_input_require_grads()
+            print(model)
+        
 
-    if cfg.LoRA.r != 0:
-        config = LoraConfig(
-            r=cfg.LoRA.r, 
-            lora_alpha=cfg.LoRA.alpha, 
-            target_modules=find_all_linear_names(model), 
-            lora_dropout=cfg.LoRA.dropout,
-            bias="none", 
-            task_type="CAUSAL_LM"
+        trainer = CustomTrainer(
+            model=model,
+            train_dataset=torch_format_dataset,
+            eval_dataset=torch_format_dataset,
+            args=training_args,
+            data_collator=custom_data_collator,
         )
-        model = get_peft_model(model, config)
-        model.enable_input_require_grads()
-    
+        model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
+        trainer.train()
 
-    trainer = CustomTrainer(
-        model=model,
-        train_dataset=torch_format_dataset,
-        eval_dataset=torch_format_dataset,
-        args=training_args,
-        data_collator=custom_data_collator,
-    )
-    model.config.use_cache = False  # silence the warnings. Please re-enable for inference!
-    trainer.train()
+        # save the model
+        if cfg.LoRA.r != 0:
+            model = model.merge_and_unload()
 
-    #save the model
-    if cfg.LoRA.r != 0:
-        model = model.merge_and_unload()
-
-
+    # print("save pretrained")
+    print(model)
+    # # check if model weights are loaded
+    # print("check some weight")
+    # # print(model.layers[0].mlp.fc1.weight)
+    # for param in model.parameters():
+    #     print(param)
     model.save_pretrained(cfg.save_dir)
     tokenizer.save_pretrained(cfg.save_dir)
 
