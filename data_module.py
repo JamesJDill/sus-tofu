@@ -44,8 +44,8 @@ class TextForgetDatasetQA(Dataset):
         self.model_configs = get_model_identifiers_from_yaml(model_family)
         self.loss_type = loss_type
 
-        if self.loss_type == "idk":
-            self.split1, self.split2 = "idk", "retain"
+        if self.loss_type == "idk" or self.loss_type == "idk_ga":
+            self.split1, self.split2 = self.loss_type, "retain"
             self.idontknowfile = "data/idontknow.jsonl"
             self.idk = open(self.idontknowfile, "r").readlines()
         else:
@@ -67,9 +67,27 @@ class TextForgetDatasetQA(Dataset):
                 #get a random answer position from idk
                 rand_pos = torch.randint(0, len(self.idk), (1,)).item()
                 answer = self.idk[rand_pos].strip()
+            # elif data_type == "idk_ga":
+            #     rand_pos = torch.randint(0, len(self.idk), (1,)).item()
+            #     idk_answer = self.idk[rand_pos].strip()
+            #     idk_data = convert_raw_data_to_model_format(self.tokenizer, self.max_length, question, idk_answer, self.model_configs)
+            #     rets.append(idk_data)
                 
             converted_data = convert_raw_data_to_model_format(self.tokenizer, self.max_length, question, answer, self.model_configs)
             rets.append(converted_data)
+            
+        if data_type == "idk_ga":
+            for data_type in [self.split1, self.split2]:
+                #use questions from forget set if split is idk or forget
+                data = self.forget_data
+                idx = idx if data_type != "retain" else (idx + torch.randint(0, len(self.retain_data), (1,)).item()) % len(self.retain_data)
+                question = data[idx]['question']
+
+                rand_pos = torch.randint(0, len(self.idk), (1,)).item()
+                answer = self.idk[rand_pos].strip()
+                    
+                converted_data = convert_raw_data_to_model_format(self.tokenizer, self.max_length, question, answer, self.model_configs)
+                rets.append(converted_data)
         return rets
 
 

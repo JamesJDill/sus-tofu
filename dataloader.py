@@ -88,7 +88,57 @@ class CustomTrainerForgetting(Trainer):
         
         return model
     
-
+    
+    def ga_loss(self, model, inputs):
+        forget_inputs, retain_inputs = inputs
+        input_ids, labels, attention_mask = forget_inputs
+        outputs = model(input_ids,labels=labels, attention_mask=attention_mask)
+        forget_loss = outputs.loss
+        forget_loss = forget_loss * -1
+        loss = forget_loss
+        return (loss, outputs)
+    
+    def idk_loss(self, model, inputs):
+        idk_inputs, retain_inputs = inputs
+        idk_input_ids, idk_labels, idk_attention_mask = idk_inputs
+        retain_input_ids, retain_labels, retain_attention_mask = retain_inputs
+        
+        #concatenate the inputs. single forward pass is much more efficient
+        input_ids = torch.cat((idk_input_ids, retain_input_ids), dim=0)
+        labels = torch.cat((idk_labels, retain_labels), dim=0)
+        attention_mask = torch.cat((idk_attention_mask, retain_attention_mask), dim=0)
+        
+        outputs = model(input_ids,labels=labels, attention_mask=attention_mask)
+        loss = outputs.loss
+        return (loss, outputs)
+        
+    def idk_ga_loss(self, model, inputs):
+        non_retain_inputs, retain_inputs = inputs
+        # split inputs in half, first half is ga, second half is idk
+        input_ids, labels, attention_mask = non_retain_inputs
+        print(input_ids.shape)
+        print(labels.shape)
+        print(attention_mask.shape)
+        ga_input_ids, idk_input_ids = torch.chunk(input_ids, 2, dim=0)
+        ga_labels, idk_labels = torch.chunk(labels, 2, dim=0)
+        ga_attention_mask, idk_attention_mask = torch.chunk(attention_mask, 2, dim=0)
+        
+        # GA forget loss
+        ga_outputs = model(ga_input_ids,labels=ga_labels, attention_mask=ga_attention_mask)
+        forget_loss = ga_outputs.loss
+        forget_loss = forget_loss * -1
+        
+        # pref opt loss
+        retain_input_ids, retain_labels, retain_attention_mask = retain_inputs
+        idk_input_ids = torch.cat((idk_input_ids, retain_input_ids), dim=0)
+        idk_labels = torch.cat((idk_labels, retain_labels), dim=0)
+        idk_attention_mask = torch.cat((idk_attention_mask, retain_attention_mask), dim=0)
+        
+        idk_outputs = model(idk_input_ids,labels=idk_labels, attention_mask=idk_attention_mask)
+        idk_loss = idk_outputs.loss
+        
+        # concatenate losses and outputs
+    
     def compute_loss(self, model, inputs, return_outputs=False):
         if self.loss_type == "grad_ascent":
             forget_inputs, retain_inputs = inputs
