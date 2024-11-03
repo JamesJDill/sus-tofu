@@ -116,9 +116,9 @@ class CustomTrainerForgetting(Trainer):
         non_retain_inputs, retain_inputs = inputs
         # split inputs in half, first half is ga, second half is idk
         input_ids, labels, attention_mask = non_retain_inputs
-        print(input_ids.shape)
-        print(labels.shape)
-        print(attention_mask.shape)
+        # print(input_ids.shape)
+        # print(labels.shape)
+        # print(attention_mask.shape)
         ga_input_ids, idk_input_ids = torch.chunk(input_ids, 2, dim=0)
         ga_labels, idk_labels = torch.chunk(labels, 2, dim=0)
         ga_attention_mask, idk_attention_mask = torch.chunk(attention_mask, 2, dim=0)
@@ -137,7 +137,15 @@ class CustomTrainerForgetting(Trainer):
         idk_outputs = model(idk_input_ids,labels=idk_labels, attention_mask=idk_attention_mask)
         idk_loss = idk_outputs.loss
         
-        # concatenate losses and outputs
+        # add losses and concat outputs
+        # print(forget_loss.shape)
+        # print(idk_loss.shape)
+        loss = forget_loss + idk_loss
+        
+        logits = torch.cat((ga_outputs.logits, idk_outputs.logits), dim=0)
+        outputs = {'loss': loss, 'logits': logits}
+        return (loss, outputs)
+        
     
     def compute_loss(self, model, inputs, return_outputs=False):
         if self.loss_type == "grad_ascent":
@@ -224,7 +232,12 @@ class CustomTrainerForgetting(Trainer):
             loss = -idk_loss_current.mean()
 
             outputs = forget_outputs
-        
+            
+        elif self.loss_type == "idk_ga":
+            loss, outputs = self.idk_ga_loss(model, inputs)
+
+        # print(loss.shape)
+        # print(outputs.logits.shape)
         return (loss, outputs) if return_outputs else loss
         
     

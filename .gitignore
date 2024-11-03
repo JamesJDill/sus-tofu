@@ -24,4 +24,4 @@ notebook/
 reproduce.ipynb
 upload_to_hf.py
 
-*.safetensors
+data/locus/*

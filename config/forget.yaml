@@ -1,5 +1,5 @@
 model_family: phi #llama2-7b
-model_path: ./data/locus/llm_weights/zhilif/TOFU/ft_epoch0_lr2e-05_phi_full_wd0.01
+model_path: ./data/locus/llm_weights/zhilif/TOFU/ft_epoch5_lr2e-05_phi_full_wd0.01
 LoRA:
   r: 1
   alpha: 32
@@ -11,7 +11,8 @@ data_path: locuslab/TOFU
 batch_size: 16
 gradient_accumulation_steps: 4
 num_epochs: 5
-forget_loss: grad_ascent
+# forget_loss: grad_ascent
+forget_loss: idk_ga
 
 save_dir: ${model_path}/${forget_loss}_${lr}_${split}_${num_epochs}
 overwrite_dir: false

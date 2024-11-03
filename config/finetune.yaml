@@ -1,7 +1,7 @@
 model_family: phi #llama2-7b
 
 LoRA:
-  r: 1
+  r: 0
   alpha: 32
   dropout: 0.05
 
