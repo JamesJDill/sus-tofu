@@ -51,7 +51,9 @@ def main(cfg):
     os.environ["WANDB_DISABLED"] = "true"
     model_cfg = get_model_identifiers_from_yaml(cfg.model_family)
     model_id = model_cfg["hf_key"]
+    
     if cfg.model_path is None:
+        print("\njust seeing if it was none\n")
         cfg.model_path = model_cfg["ft_model_path"]
 
     print("######################")
@@ -114,15 +116,20 @@ def main(cfg):
     #if there is a pytorch*.bin file in the model path, then load that. use regex there can be anythign in between pytorch and .bin
     import re
     path_found = False
+    print()
+    print("dskjhgisyfgv")
+    print(cfg.model_path)
+    print()
     for file in os.listdir(cfg.model_path):
         if re.search("pytorch.*\.bin", file):
             path_found = True
             break
         
-        if re.search("model-*\.safetensors", file):
+        #if re.search("model-*\.safetensors", file):
+        if re.search("model.safetensors", file):
             path_found = True
             break
-
+    print("\n I FOUDN IT OMG\n")
     oracle_model = None
 
     if path_found:
