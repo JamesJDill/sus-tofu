@@ -1,4 +1,5 @@
-model_path: ./data/locus/llm_weights/zhilif/TOFU/ft_epoch5_lr2e-05_phi_full_wd0.01 # /checkpoint-1250 #unlearning_ckpt2/ft_model_10_epochs_inst_lr1e-3
+# model_path: ./data/locus/llm_weights/zhilif/TOFU/ft_epoch5_lr2e-05_phi_full_wd0.01/grad_ascent_2e-05_forget01_5 # /checkpoint-1250 #unlearning_ckpt2/ft_model_10_epochs_inst_lr1e-3
+model_path: .data/locus/llm_weights/zhilif/TOFU/ft_epoch5_lr2e-05_phi_full_wd0.01/idk_ga_2e-05_forget01_5
 model_family: phi #llama2-7b
 
 save_dir: ${model_path}/eval_results/ds_size${ds_size}
