@@ -1,7 +1,7 @@
 model_family: phi #llama2-7b
 model_path: ./data/locus/llm_weights/zhilif/TOFU/ft_epoch5_lr2e-05_phi_full_wd0.01
 LoRA:
-  r: 1
+  r: 0
   alpha: 32
   dropout: 0.05
 
