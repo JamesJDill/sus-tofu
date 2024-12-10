@@ -1,0 +1,2 @@
+ROUGE Real Authors,Prob. Real Authors,Truth Ratio Real Authors,ROUGE Real World,Prob. Real World,Truth Ratio Real World,ROUGE Retain,Prob. Retain,Truth Ratio Retain,ROUGE Forget,Prob. Forget,Truth Ratio Forget,Model Utility,Forget Quality,Method,Submitted By
+0.0,0.2286345233358346,0.2519692476151608,0.0,0.22974301601245692,0.2253580526122741,0.02097297831261176,1.1817916110613202e-45,0.1598684383512795,0.020617012915790316,1.1912360923189733e-45,0.6275611893059361,0.0,1.0,ga_forget_10_5,john
